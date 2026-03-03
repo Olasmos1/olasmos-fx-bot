@@ -1,0 +1,50 @@
+# ============================================
+# GitHub Actions: Auto-retrain AI every week
+# Runs every Monday at 2:00 AM UTC
+# ============================================
+
+name: Weekly AI Retraining
+
+on:
+  schedule:
+    - cron: '0 2 * * 1'    # Every Monday 2AM UTC
+  workflow_dispatch:         # Allow manual trigger
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── Step 1: Get the code ──
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # ── Step 2: Setup Python ──
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      # ── Step 3: Install libraries ──
+      - name: Install dependencies
+        run: |
+          pip install yfinance pandas numpy scikit-learn
+          pip install ta requests joblib
+
+      # ── Step 4: Run retraining script ──
+      - name: Retrain AI models
+        env:
+          GITHUB_TOKEN:      ${{ secrets.GITHUB_TOKEN }}
+          TWELVE_DATA_API:   ${{ secrets.TWELVE_DATA_API }}
+          ALPHA_VANTAGE_API: ${{ secrets.ALPHA_VANTAGE_API }}
+        run: |
+          python scripts/retrain.py
+
+      # ── Step 5: Save updated models ──
+      - name: Commit updated models
+        run: |
+          git config --global user.email "bot@olasmosfx.com"
+          git config --global user.name  "Olasmos FX Bot"
+          git add models/
+          git diff --staged --quiet || git commit -m "🤖 Auto-retrained models $(date +'%Y-%m-%d')"
+          git push
