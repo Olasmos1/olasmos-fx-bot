@@ -1,8 +1,9 @@
 import os
 import logging
+import asyncio
 from threading import Thread
 from flask import Flask
-from telegram import Update
+from telegram import Update, Bot
 from telegram.ext import (Application, CommandHandler,
                            ContextTypes)
 
@@ -26,10 +27,9 @@ def health():
 
 def run_flask():
     app_flask.run(host='0.0.0.0', port=PORT,
-                  use_reloader=False,
-                  debug=False)
+                  use_reloader=False, debug=False)
 
-# ─── COMMANDS ────────────────────────────────
+# ─── BOT ─────────────────────────────────────
 async def cmd_start(update: Update,
                     ctx: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
@@ -38,13 +38,13 @@ async def cmd_start(update: Update,
 async def cmd_status(update: Update,
                      ctx: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "✅ Bot is running on Render 24/7!")
+        "✅ Bot running on Render 24/7!")
 
-# ─── POST INIT ───────────────────────────────
-async def post_init(app: Application):
+async def send_startup(token, chat_id):
     try:
-        await app.bot.send_message(
-            chat_id=CHAT_ID,
+        bot = Bot(token)
+        await bot.send_message(
+            chat_id=chat_id,
             text=(
                 "🤖 *OLASMOS FX BOT LIVE!*\n"
                 "━━━━━━━━━━━━━━━━━━━\n"
@@ -55,36 +55,35 @@ async def post_init(app: Application):
             ),
             parse_mode="Markdown"
         )
-        logger.info("✅ Startup message sent!")
     except Exception as e:
-        logger.error(f"Startup message error: {e}")
+        logger.error(f"Startup error: {e}")
 
-# ─── MAIN ────────────────────────────────────
-def main():
-    # Start Flask in background thread
-    flask_thread = Thread(target=run_flask, daemon=True)
-    flask_thread.start()
-    logger.info(f"✅ Flask started on port {PORT}")
+async def run_bot():
+    # Send startup message
+    await send_startup(TOKEN, CHAT_ID)
 
-    # Build Telegram app
-    app = (
-        Application.builder()
-        .token(TOKEN)
-        .post_init(post_init)
-        .build()
-    )
-
-    # Add handlers
+    # Build app
+    app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start",  cmd_start))
     app.add_handler(CommandHandler("status", cmd_status))
 
     # Start polling
-    logger.info("🚀 Starting Telegram polling...")
-    app.run_polling(
-        allowed_updates=Update.ALL_TYPES,
-        drop_pending_updates=True,
-        close_loop=False
-    )
+    await app.initialize()
+    await app.start()
+    await app.updater.start_polling(
+        drop_pending_updates=True)
+    logger.info("✅ Bot polling started!")
+
+    # Keep running
+    await asyncio.Event().wait()
+
+def main():
+    # Start Flask
+    Thread(target=run_flask, daemon=True).start()
+    logger.info(f"✅ Flask on port {PORT}")
+
+    # Start bot
+    asyncio.run(run_bot())
 
 if __name__ == "__main__":
     main()
