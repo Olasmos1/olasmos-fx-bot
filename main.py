@@ -528,10 +528,10 @@ async def generate_signal(symbol):
     }
 
 def format_signal(sig):
-  d   = ("🟢 BUY  📈" if sig["direction"]=="buy"
+  d = ("🟢 BUY  📈" if sig["direction"]=="buy"
            else "🔴 SELL 📉")
-    ft  = "⚡ FAST EXECUTION\n" if sig["fast_mode"] else ""
-    bar = ("█"*int(sig["confidence"]/10)+
+  ft = "⚡ FAST EXECUTION\n" if sig["fast_mode"] else ""
+  bar = ("█"*int(sig["confidence"]/10)+
            "░"*(10-int(sig["confidence"]/10)))
     return (
         f"━━━━━━━━━━━━━━━━━━━━━━\n"
