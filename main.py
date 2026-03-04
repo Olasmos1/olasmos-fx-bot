@@ -1,5 +1,4 @@
 import os
-import asyncio
 import logging
 from threading import Thread
 from flask import Flask
@@ -26,7 +25,9 @@ def health():
     return {"status": "ok"}, 200
 
 def run_flask():
-    app_flask.run(host='0.0.0.0', port=PORT)
+    app_flask.run(host='0.0.0.0', port=PORT,
+                  use_reloader=False,
+                  debug=False)
 
 # ─── COMMANDS ────────────────────────────────
 async def cmd_start(update: Update,
@@ -34,33 +35,56 @@ async def cmd_start(update: Update,
     await update.message.reply_text(
         "🤖 Olasmos FX Bot is LIVE! 🚀")
 
-# ─── MAIN ────────────────────────────────────
+async def cmd_status(update: Update,
+                     ctx: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "✅ Bot is running on Render 24/7!")
+
+# ─── POST INIT ───────────────────────────────
 async def post_init(app: Application):
-    await app.bot.send_message(
-        chat_id=CHAT_ID,
-        text=(
-            "🤖 *OLASMOS FX BOT LIVE!*\n"
-            "━━━━━━━━━━━━━━━━━━━\n"
-            "✅ Connected to Telegram!\n"
-            "✅ Running on Render 24/7\n"
-            "🚀 Full bot loading soon..."
-        ),
-        parse_mode="Markdown"
-    )
-    logger.info("✅ Bot started and message sent!")
+    try:
+        await app.bot.send_message(
+            chat_id=CHAT_ID,
+            text=(
+                "🤖 *OLASMOS FX BOT LIVE!*\n"
+                "━━━━━━━━━━━━━━━━━━━\n"
+                "✅ Bot connected!\n"
+                "✅ Running 24/7 on Render\n"
+                "📡 Monitoring markets...\n"
+                "Type /start to begin!"
+            ),
+            parse_mode="Markdown"
+        )
+        logger.info("✅ Startup message sent!")
+    except Exception as e:
+        logger.error(f"Startup message error: {e}")
 
+# ─── MAIN ────────────────────────────────────
 def main():
-    Thread(target=run_flask, daemon=True).start()
-    logger.info(f"Flask running on port {PORT}")
+    # Start Flask in background thread
+    flask_thread = Thread(target=run_flask, daemon=True)
+    flask_thread.start()
+    logger.info(f"✅ Flask started on port {PORT}")
 
+    # Build Telegram app
     app = (
         Application.builder()
         .token(TOKEN)
         .post_init(post_init)
         .build()
     )
-    app.add_handler(CommandHandler("start", cmd_start))
-    app.run_polling(drop_pending_updates=True)
+
+    # Add handlers
+    app.add_handler(CommandHandler("start",  cmd_start))
+    app.add_handler(CommandHandler("status", cmd_status))
+
+    # Start polling
+    logger.info("🚀 Starting Telegram polling...")
+    app.run_polling(
+        allowed_updates=Update.ALL_TYPES,
+        drop_pending_updates=True,
+        close_loop=False
+    )
 
 if __name__ == "__main__":
     main()
