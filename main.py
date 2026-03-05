@@ -912,8 +912,10 @@ async def scan_loop(bot):
 
 # POST INIT
 async def post_init(app: Application):
+    # Clear any existing webhook/polling conflicts
+    await app.bot.delete_webhook(drop_pending_updates=True)
     async def start_scan():
-        await asyncio.sleep(5)
+        await asyncio.sleep(10)
         await scan_loop(app.bot)
     asyncio.create_task(start_scan())
     logger.info("Scan loop started!")
