@@ -151,21 +151,19 @@ def get_candles(symbol, interval, count=100):
 # AI MODELS
 def download_model(filename):
     try:
-        url = f"https://api.github.com/repos/{GITHUB_USERNAME}/{GITHUB_REPO}/contents/models/{filename}"
-        headers = {
-            "Authorization": f"token {GITHUB_TOKEN}",
-            "Accept": "application/vnd.github.v3+json",
-        }
-        resp = requests.get(url, headers=headers, timeout=15)
+        url = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{GITHUB_REPO}/main/models/{filename}"
+        resp = requests.get(url, timeout=30)
         if resp.status_code == 200:
-            content = base64.b64decode(resp.json()["content"])
             path = f"/tmp/{filename}"
             with open(path, "wb") as f:
-                f.write(content)
+                f.write(resp.content)
+            logger.info(f"Downloaded {filename} OK")
             return path
-        return None
+        else:
+            logger.warning(f"Download failed {filename}: {resp.status_code}")
+            return None
     except Exception as e:
-        logger.warning(f"Model download error: {e}")
+        logger.warning(f"Model download error {filename}: {e}")
         return None
 
 def load_models():
