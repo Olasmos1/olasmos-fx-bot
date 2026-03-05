@@ -31,7 +31,7 @@ NEWS_API_KEY      = os.environ.get("NEWS_API_KEY", "")
 GITHUB_TOKEN      = os.environ.get("GITHUB_TOKEN", "")
 GITHUB_USERNAME   = "Olasmos1"
 GITHUB_REPO       = "olasmos-fx-bot"
-PORT              = int(os.environ.get("PORT", 10000))
+PORT = int(os.environ.get("PORT", 8080))
 
 PAIRS = ["EURUSD", "GBPUSD", "USDJPY", "XAUUSD"]
 YFINANCE_SYMBOLS = {
