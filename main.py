@@ -167,10 +167,10 @@ def fetch_alpha_vantage(symbol, interval):
         return None
 
 def get_candles(symbol, interval, count=100):
-    df = fetch_twelve(symbol, interval, count)
+    df = fetch_alpha_vantage(symbol, interval)
     if df is not None and len(df) >= 20:
         return df
-    df = fetch_alpha_vantage(symbol, interval)
+    df = fetch_twelve(symbol, interval, count)
     if df is not None and len(df) >= 20:
         return df
     logger.warning(f"No data available for {symbol} {interval}")
