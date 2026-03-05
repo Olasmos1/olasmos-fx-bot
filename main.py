@@ -844,6 +844,52 @@ async def cmd_scan(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 @auth
 async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await cmd_start(update, ctx)
+    
+ @auth
+async def cmd_debug(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("🔍 Running debug scan...")
+    for symbol in PAIRS:
+        try:
+            df = get_candles(symbol, "5min", 150)
+            if df is None:
+                await update.message.reply_text(f"{symbol}: ❌ No data")
+                continue
+            df = add_indicators(df)
+            df = add_smc(df)
+            df.dropna(inplace=True)
+            if len(df) < 10:
+                await update.message.reply_text(f"{symbol}: ❌ Not enough data")
+                continue
+            last = df.iloc[-1]
+            adx  = float(last.get("ADX", 0))
+            rsi  = float(last.get("RSI", 50))
+            macd_h = float(last.get("MACD_Hist", 0))
+            bias = get_htf_bias(symbol)
+            bull, bear = 0, 0
+            if bias == "bullish": bull += 3
+            elif bias == "bearish": bear += 3
+            if rsi < 40: bull += 1
+            elif rsi > 60: bear += 1
+            if macd_h > 0: bull += 1
+            elif macd_h < 0: bear += 1
+            if float(last.get("Bullish_BOS", 0)) > 0: bull += 2
+            if float(last.get("Bearish_BOS", 0)) > 0: bear += 2
+            if float(last.get("Bullish_FVG", 0)) > 0: bull += 1
+            if float(last.get("Bearish_FVG", 0)) > 0: bear += 1
+            if float(last.get("Liq_Grab_Low", 0)) > 0: bull += 2
+            if float(last.get("Liq_Grab_High", 0)) > 0: bear += 2
+            await update.message.reply_text(
+                f"📊 {symbol}\n"
+                f"ADX: {adx:.1f} (min 15)\n"
+                f"RSI: {rsi:.1f}\n"
+                f"MACD: {'▲' if macd_h > 0 else '▼'}\n"
+                f"Bias: {bias}\n"
+                f"Bull score: {bull}\n"
+                f"Bear score: {bear}\n"
+                f"Direction: {'BUY' if bull > bear+1 else 'SELL' if bear > bull+1 else 'NONE'}"
+            )
+        except Exception as e:
+            await update.message.reply_text(f"{symbol}: ❌ Error: {str(e)[:50]}")   
 
 # SCAN LOOP
 async def scan_loop(bot):
