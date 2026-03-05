@@ -912,7 +912,10 @@ async def scan_loop(bot):
 
 # POST INIT
 async def post_init(app: Application):
-    asyncio.create_task(scan_loop(app.bot))
+    async def start_scan():
+        await asyncio.sleep(5)
+        await scan_loop(app.bot)
+    asyncio.create_task(start_scan())
     logger.info("Scan loop started!")
 
 # MAIN
