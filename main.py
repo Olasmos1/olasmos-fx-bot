@@ -845,7 +845,7 @@ async def cmd_scan(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await cmd_start(update, ctx)
     
- @auth
+@auth
 async def cmd_debug(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🔍 Running debug scan...")
     for symbol in PAIRS:
